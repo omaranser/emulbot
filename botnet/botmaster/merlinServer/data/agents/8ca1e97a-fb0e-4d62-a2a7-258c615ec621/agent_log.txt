@@ -1,0 +1,18 @@
+[2020-02-04 20:36:47.214170112 +0100 CET m=+2.751086208]Initial check in for agent 8ca1e97a-fb0e-4d62-a2a7-258c615ec621
+[2020-02-04 20:36:47.214191051 +0100 CET m=+2.751107160]Platform: linux
+[2020-02-04 20:36:47.21419603 +0100 CET m=+2.751112127]Architecture: amd64
+[2020-02-04 20:36:47.214199553 +0100 CET m=+2.751115650]HostName: oanser
+[2020-02-04 20:36:47.214202714 +0100 CET m=+2.751118811]UserName: root
+[2020-02-04 20:36:47.214205954 +0100 CET m=+2.751122051]UserGUID: 0
+[2020-02-04 20:36:47.214209112 +0100 CET m=+2.751125209]Process ID: 25931
+[2020-02-04 20:36:47.214212602 +0100 CET m=+2.751128699]IPs: [127.0.0.1/8 ::1/128 192.168.1.61/24 fe80::af50:a629:acec:175c/64 172.17.0.1/16 fe80::42:a9ff:fef4:6852/64 10.255.255.254/8 193.168.0.254/24]
+Processing AgentInfo message:
+	Agent Version: 0.1.4 Beta 
+	Agent Build: cd8f6742ebe5b1d4ed52b7ab036ab700658f9bd2 
+	Agent waitTime: 30s 
+	Agent skew: 3000 
+	Agent paddingMax: 4096 
+	Agent maxRetry: 7 
+	Agent failedCheckin: 0 
+[2020-02-04 20:37:17.290538323 +0100 CET m=+32.827454426]Agent status check in
+[2020-02-04 20:37:48.451418119 +0100 CET m=+63.988334387]Agent status check in

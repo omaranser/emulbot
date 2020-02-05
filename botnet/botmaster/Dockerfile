@@ -1,6 +1,7 @@
 FROM ubuntu:latest
-COPY merlinServer-Linux-x64 /usr/bin/merlinserver
+
+COPY merlinServer /merlinServer
 RUN apt-get update &&\
 	apt-get install python3 -y
 
-CMD ["/usr/bin/merlinserver", "-i", "0.0.0.0"]
+CMD ["/merlinServer/merlinServer-Linux-x64","-i","0.0.0.0"]

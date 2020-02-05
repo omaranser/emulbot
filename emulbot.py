@@ -53,18 +53,42 @@ def buildEmulbot():
     buildServersImages()
     buildBotnetImages()
 
-
 def createServersContainer():
     client.containers.create("dns",
                              network="nw_internet"
                              )
 
 
+def startServersContainer():
+    client.containers.run("dns",
+                          detach=True,
+                          network="nw_internet")
+
+def createBotnetContainer():
+    client.containers.create("merlinserver",
+                             network="nw_internet"
+                             )
+    client.containers.create("merlinagent",
+                             network="nw_local"
+                             )
+def startBotnetContainer():
+    client.containers.run("merlinserver",
+                          detach=True,
+                          network="nw_internet"
+                          )
+    client.containers.run("merlinagent",
+                          detach=True,
+                          network="nw_local"
+                          )
+
 def createEmulbot():
     createServersContainer()
+    startServersContainer()
+    createBotnetContainer()
+    startBotnetContainer()
 
 def main():
-    buildDockerNetworks()
+    # buildDockerNetworks()
     buildServersImages()
     buildBotnetImages()
     createEmulbot()
