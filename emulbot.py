@@ -3,6 +3,7 @@ import docker
 client = docker.DockerClient(base_url='unix://var/run/docker.sock')
 
 def buildDockerNetworks():
+
     ipam_pool_local = docker.types.IPAMPool(
         subnet='10.0.0.0/8',
         gateway='10.255.255.254'
@@ -26,16 +27,15 @@ def buildDockerNetworks():
                            ipam=ipam_config
     )
 
+
+
 def buildServersImages():
     client.images.build(path="servers/dns",
                         tag="dns"
     )
-    #client.images.build(path="servers/http",
-     #                  tag="http"
-    #)
-    #client.images.build(path="servers/firewall",
-     #                   tag="firewall"
-    #)
+    client.images.build(path="servers/http",
+                        tag="http"
+    )
     client.images.build(path="servers/ftp",
                        tag="ftp"
     )
@@ -48,10 +48,13 @@ def buildBotnetImages():
                         tag="merlinagent"
                         )
 
+
 def buildEmulbot():
     buildDockerNetworks()
     buildServersImages()
     buildBotnetImages()
+
+
 
 def createServersContainer():
     client.containers.create("dns",
@@ -81,6 +84,7 @@ def startBotnetContainer():
                           network="nw_local"
                           )
 
+
 def createEmulbot():
     createServersContainer()
     startServersContainer()
@@ -88,9 +92,7 @@ def createEmulbot():
     startBotnetContainer()
 
 def main():
-    buildDockerNetworks()
-    buildServersImages()
-    buildBotnetImages()
+    buildEmulbot()
     createEmulbot()
 
 if __name__ == '__main__':
