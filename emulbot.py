@@ -30,14 +30,14 @@ def buildServersImages():
     client.images.build(path="servers/dns",
                         tag="dns"
     )
-    client.images.build(path="servers/http",
-                        tag="http"
-    )
-    client.images.build(path="servers/firewall",
-                        tag="firewall"
-    )
+    #client.images.build(path="servers/http",
+     #                  tag="http"
+    #)
+    #client.images.build(path="servers/firewall",
+     #                   tag="firewall"
+    #)
     client.images.build(path="servers/ftp",
-                        tag="ftp"
+                       tag="ftp"
     )
 
 def buildBotnetImages():
@@ -88,7 +88,7 @@ def createEmulbot():
     startBotnetContainer()
 
 def main():
-    # buildDockerNetworks()
+    buildDockerNetworks()
     buildServersImages()
     buildBotnetImages()
     createEmulbot()
