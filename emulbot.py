@@ -5,8 +5,6 @@ import time
 import coloredlogs, logging
 from console_progressbar import ProgressBar
 
-pb = ProgressBar(total=100, prefix='Processing....', suffix='Now', decimals=3, length=50, fill='#', zfill='-')
-
 client = docker.DockerClient(base_url='unix://var/run/docker.sock')
 
 logger = logging.getLogger(__name__)
@@ -99,28 +97,74 @@ def buildEmulbot():
 
 
 def createServersContainer():
-    client.containers.create("dns", network="nw_internet")
+    try:
+        client.containers.create("dns", network="nw_internet")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified DNS image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while creating the DNS server")
 
 
 def startServersContainer():
-    client.containers.run("dns", detach=True, network="nw_internet")
+    try:
+        client.containers.run("dns", detach=True, network="nw_internet", name="dns_server")
+    except docker.errors.ContainerError:
+        logging.error("The DNS container exits with a non-zero exit code and detach is False")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified DNS image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while running the DNS server")
 
 
 def createBotnetContainer():
-    client.containers.create("merlinserver", network="nw_internet")
-    client.containers.create("merlinagent", network="nw_local")
+    try:
+        client.containers.create("merlinserver", network="nw_internet")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified merlinserver image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while creating the merlinserver container")
+
+    try:
+        client.containers.create("merlinagent", network="nw_local")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified merlinagent image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while creating the merlinagent container")
 
 
 def startBotnetContainer():
-    client.containers.run("merlinserver", detach=True, network="nw_internet")
-    client.containers.run("merlinagent", detach=True, network="nw_local")
+    try:
+        client.containers.run("merlinserver", detach=True, network="nw_internet", name="merlin_server")
+    except docker.errors.ContainerError:
+        logging.error("The merlinserver container exits with a non-zero exit code and detach is False")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified merlinserver image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while running the merlinserver container")
+
+    try:
+        client.containers.run("merlinagent", detach=True, network="nw_local", name="merlin_agent")
+    except docker.errors.ContainerError:
+        logging.error("The merlinagent container exits with a non-zero exit code and detach is False")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified merlinagent image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while running the merlinagent container")
 
 
-def createEmulbot():
+def startEmulbot():
+    logging.info("Creating servers container")
     createServersContainer()
+    logging.info("Servers container created")
+    logging.info("Starting servers container")
     startServersContainer()
+    logging.info("Servers container started")
+    logging.info("Creating botnet container")
     createBotnetContainer()
+    logging.info("Botnet container created")
+    logging.info("Starting botnet container")
     startBotnetContainer()
+    logging.info("Botnet container started")
 
 
 def cleanNetwork():
@@ -135,17 +179,35 @@ def cleanNetwork():
             logging.error("[network.remove()] The server returns an error while cleaning the network")
 
 
-def cleanContainer():
-    pass
+def stopServersContainer():
+    client.containers.get("dns_server").stop()
+
+
+def removeServersContainer():
+    client.containers.prune()
+
+
+def stopBotnetContainer():
+    client.containers.get("merlin_server").stop()
+    client.containers.get("merlin_agent").stop()
+
+
+def removeBotnetContainer():
+    client.containers.prune()
 
 
 def cleanEmulbot():
+    logging.info("Cleaning servers container")
+    stopServersContainer()
+    removeServersContainer()
+    logging.info("Servers container cleaned")
+    logging.info("Cleaning botnet container")
+    stopBotnetContainer()
+    removeBotnetContainer()
+    logging.info("Botnet container cleaned")
     logging.info("Cleaning nw_local and nw_internet")
     cleanNetwork()
     logging.info("Network cleaned")
-    logging.info("Cleaning containers")
-    cleanContainer()
-    logging.info("Containers cleaned")
 
 
 def main():
@@ -161,6 +223,9 @@ def main():
 
     if args.action == "build":
         buildEmulbot()
+
+    if args.action == "run":
+        startEmulbot()
 
     if args.action == "clean":
         cleanEmulbot()
