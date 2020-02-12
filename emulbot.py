@@ -47,14 +47,16 @@ def buildServersImages():
         logging.error("The server returns an error while building the DNS server")
     except TypeError:
         pass
+
     try:
         client.images.build(path="servers/http", tag="http")
     except docker.errors.BuildError:
-        logging.error("Error during the build of the HTTP server")
+       logging.error("Error during the build of the HTTP server")
     except docker.errors.APIError:
-        logging.error("The server returns an error while building the HTTP server")
+       logging.error("The server returns an error while building the HTTP server")
     except TypeError:
         pass
+
     try:
         client.images.build(path="servers/ftp", tag="ftp")
     except docker.errors.BuildError:
@@ -104,6 +106,20 @@ def createServersContainer():
     except docker.errors.APIError:
         logging.error("The server returns an error while creating the DNS server")
 
+    try:
+        client.containers.create("ftp", network="nw_internet")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified FTP image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns ans error while creating the FTP server")
+
+    try:
+        client.containers.create("http", network="nw_internet")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified HTTP image does not exist")
+    except docker.errors.APIError:
+        logging.error("The specified HTTP image does not exist")
+
 
 def startServersContainer():
     try:
@@ -114,6 +130,24 @@ def startServersContainer():
         logging.error("The specified DNS image does not exist")
     except docker.errors.APIError:
         logging.error("The server returns an error while running the DNS server")
+
+    try:
+        client.containers.run("ftp", detach=True, network="nw_internet", name="ftp_server")
+    except docker.errors.ContainerError:
+        logging.error("The FTP container exists with a non-zero exit code and detach is False")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified FTP image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while running the FTP server")
+
+    try:
+        client.containers.run("http", detach=True, network="nw_internet", name="http_server")
+    except docker.errors.ContainerError:
+        logging.error("The HTTP container exists with a non-zero exit code and detach is False")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified HTTP image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while running the HTTP server")
 
 
 def createBotnetContainer():
@@ -181,6 +215,8 @@ def cleanNetwork():
 
 def stopServersContainer():
     client.containers.get("dns_server").stop()
+    client.containers.get("ftp_server").stop()
+    client.containers.get("http_server").stop()
 
 
 def removeServersContainer():
