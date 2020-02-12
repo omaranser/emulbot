@@ -248,7 +248,7 @@ def cleanEmulbot():
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('action', type=str, help="build | stop | clean | run")
+    parser.add_argument('action', choices=['build', 'stop', 'clean', 'run'], type=str, help="build | stop | clean | run")
     parser.add_argument("--nb", default=50, help="Number of bot")
     parser.add_argument("--nv", default=0, help="")
     parser.add_argument("--pktfreq", default=None)
@@ -266,8 +266,6 @@ def main():
     if args.action == "clean":
         cleanEmulbot()
 
-    if args.action not in ["build","stop","clean","run"]:
-        logging.error("Bad command")
     # buildDockerNetworks()
     # buildServersImages()
     # buildBotnetImages()
