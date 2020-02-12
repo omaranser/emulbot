@@ -230,6 +230,8 @@ def main():
     if args.action == "clean":
         cleanEmulbot()
 
+    if args.action not in ["build","stop","clean","run"]:
+        logging.error("Bad command")
     # buildDockerNetworks()
     # buildServersImages()
     # buildBotnetImages()

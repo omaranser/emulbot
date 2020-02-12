@@ -22,5 +22,6 @@ RUN mkdir merlin && \
 
 #WORKDIR $GOPATH/src/github.com/Ne0nd0g/merlin
 
+CMD echo 'nameserver 193.168.0.1' > /etc/resolv.conf
 CMD tail -f /dev/null
 #CMD cd merlin-master/cmd/merlinagent && go run main.go

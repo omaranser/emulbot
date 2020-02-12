@@ -12,11 +12,16 @@ RUN apt-get update \
     && wget https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz \
     && apt-get update && apt-get install -yy \
       unzip \
-      zip
+      zip \
+      net-tools \
+      dnsutils
 
 RUN tar -xvf go1.13.3.linux-amd64.tar.gz \
     && mv go /usr/local \
-    && rm go1.13.3.linux-amd64.tar.gz
+    && rm go1.13.3.linux-amd64.tar.gz \
+    && export GOROOT=/usr/local/go \
+    && export GOPATH=$HOME/Projects/Proj1 \
+    && export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 RUN unzip master.zip \
     && rm master.zip
