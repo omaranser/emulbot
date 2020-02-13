@@ -16,9 +16,17 @@ RUN echo "**** install  ****" && \
     pip3 install --no-cache --upgrade pip setuptools wheel && \
     if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi
 
-RUN mkdir merlin && \
+RUN mkdir dnscat2 && \
     wget https://github.com/Ne0nd0g/merlin/archive/master.zip && \
     unzip master.zip
+
+RUN apk add --update --no-cache make=4.2.1-r2
+ADD client /dnscat2/client
+
+WORKDIR /dnscat2/client
+RUN make
+
+WORKDIR /
 
 #WORKDIR $GOPATH/src/github.com/Ne0nd0g/merlin
 
