@@ -69,17 +69,17 @@ def buildBotnetImages():
     try:
         client.images.build(path="botnet/botmaster", tag="merlinserver")
     except docker.errors.BuildError:
-        logging.error("Error during the build of the merlinserver")
+        logging.error("Error during the build of the bot_master")
     except docker.errors.APIError:
-        logging.error("The server returns an error while building the merlinserver")
+        logging.error("The server returns an error while building the bot_master")
     except TypeError:
         pass
     try:
         client.images.build(path="botnet/bots", tag="merlinagent")
     except docker.errors.BuildError:
-        logging.error("Error during the build of the merlinserver")
+        logging.error("Error during the build of the bot")
     except docker.errors.APIError:
-        logging.error("The server returns an error while building the merlinserver")
+        logging.error("The server returns an error while building the bot")
     except TypeError:
         pass
 
@@ -134,7 +134,7 @@ def createBotnetContainer():
 
 def startBotnetContainer():
     try:
-        client.containers.run("merlinserver", detach=True, network="nw_internet", name="merlin_server")
+        client.containers.run("merlinserver", detach=True, network="nw_internet", name="bot_master")
     except docker.errors.ContainerError:
         logging.error("The merlinserver container exits with a non-zero exit code and detach is False")
     except docker.errors.ImageNotFound:
@@ -143,7 +143,7 @@ def startBotnetContainer():
         logging.error("The server returns an error while running the merlinserver container")
 
     try:
-        client.containers.run("merlinagent", detach=True, network="nw_local", name="merlin_agent")
+        client.containers.run("merlinagent", detach=True, network="nw_local", name="bot")
     except docker.errors.ContainerError:
         logging.error("The merlinagent container exits with a non-zero exit code and detach is False")
     except docker.errors.ImageNotFound:
@@ -180,20 +180,54 @@ def cleanNetwork():
 
 
 def stopServersContainer():
-    client.containers.get("dns_server").stop()
+    try:
+        dns_server = client.containers.get("dns_server")
+    except docker.errors.NotFound:
+        logging.error("The container dns_server does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while getting the dns_server container")
+
+    try:
+        dns_server.stop()
+    except docker.errors.APIError:
+        logging.error("The server returns an error while stopping the dns_server container")
 
 
 def removeServersContainer():
-    client.containers.prune()
+    try:
+        client.containers.prune()
+    except docker.errors.APIError:
+        logging.error("The server returns an error at the prune function")
 
 
 def stopBotnetContainer():
-    client.containers.get("merlin_server").stop()
-    client.containers.get("merlin_agent").stop()
+    try:
+        bot = client.containers.get("bot")
+    except docker.errors.NotFound:
+        logging.error("The container bot does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while getting the bot container")
+    try:
+        bot.stop()
+    except docker.errors.APIError:
+        logging.error("The server returns an error while stopping the bot container")
+    try:
+        bot_master = client.containers.get("bot_master")
+    except docker.errors.NotFound:
+        logging.error("The container bot does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while getting the bot container")
+    try:
+        bot_master.stop()
+    except docker.errors.APIError:
+        logging.error("The server returns an error while stopping the bot_master container")
 
 
 def removeBotnetContainer():
-    client.containers.prune()
+    try:
+        client.containers.prune()
+    except docker.errors.APIError:
+        logging.error("The server returns an error at the prune function")
 
 
 def cleanEmulbot():
@@ -212,7 +246,8 @@ def cleanEmulbot():
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('action', choices=['build', 'stop', 'clean', 'run'], type=str, help="build | stop | clean | run")
+    parser.add_argument('action', choices=['build', 'stop', 'clean', 'run'], type=str,
+                        help="build | stop | clean | run")
     parser.add_argument("--nb", default=50, help="Number of bot")
     parser.add_argument("--nv", default=0, help="")
     parser.add_argument("--pktfreq", default=None)
