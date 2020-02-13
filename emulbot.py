@@ -225,8 +225,30 @@ def stopServersContainer():
         dns_server.stop()
     except docker.errors.APIError:
         logging.error("The server returns an error while stopping the dns_server container")
-    client.containers.get("ftp_server").stop()
-    client.containers.get("http_server").stop()
+
+    try:
+        ftp_server = client.containers.get("ftp_server")
+    except docker.errors.NotFound:
+        logging.error("The container ftp_server does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while getting the ftp_server container")
+
+    try:
+        ftp_server.stop()
+    except docker.errors.APIError:
+        logging.error("The server returns an error while stopping the ftp_server container")
+
+    try:
+        http_server = client.containers.get("http_server")
+    except docker.errors.NotFound:
+        logging.error("The container http_server does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while getting the http_server container")
+
+    try:
+        http_server.stop()
+    except docker.errors.APIError:
+        logging.error("The server returns an error while stopping the http_server container")
 
 
 def removeServersContainer():
