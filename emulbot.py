@@ -132,23 +132,25 @@ def startServersContainer():
     except docker.errors.APIError:
         logging.error("The server returns an error while running the DNS server")
 
-    try:
-        client.containers.run(image="ftp", detach=True, network="nw_internet", name="ftp_server")
-    except docker.errors.ContainerError:
-        logging.error("The FTP container exists with a non-zero exit code and detach is False")
-    except docker.errors.ImageNotFound:
-        logging.error("The specified FTP image does not exist")
-    except docker.errors.APIError:
-        logging.error("The server returns an error while running the FTP server")
+    for i in range(3):
+        try:
+            client.containers.run("ftp", detach=True, network="nw_internet", name="ftp_server"+str(i))
+        except docker.errors.ContainerError:
+            logging.error("The FTP container exists with a non-zero exit code and detach is False")
+        except docker.errors.ImageNotFound:
+            logging.error("The specified FTP image does not exist")
+        except docker.errors.APIError:
+            logging.error("The server returns an error while running the FTP server")
 
-    try:
-        client.containers.run(image="http", detach=True, network="nw_internet", name="http_server")
-    except docker.errors.ContainerError:
-        logging.error("The HTTP container exists with a non-zero exit code and detach is False")
-    except docker.errors.ImageNotFound:
-        logging.error("The specified HTTP image does not exist")
-    except docker.errors.APIError:
-        logging.error("The server returns an error while running the HTTP server")
+    for i in range(5):
+        try:
+            client.containers.run("http", detach=True, network="nw_internet", name="http_server"+str(i))
+        except docker.errors.ContainerError:
+            logging.error("The HTTP container exists with a non-zero exit code and detach is False")
+        except docker.errors.ImageNotFound:
+            logging.error("The specified HTTP image does not exist")
+        except docker.errors.APIError:
+            logging.error("The server returns an error while running the HTTP server")
 
 
 def createBotnetContainer():
@@ -194,6 +196,7 @@ def startSingleBotContainer(id_bot):
         logging.error("The server returns an error while running the tbot container")
 
 
+
 def startEmulbot():
     logging.info("Creating servers container")
     createServersContainer()
@@ -234,29 +237,30 @@ def stopServersContainer():
     except docker.errors.APIError:
         logging.error("The server returns an error while stopping the dns_server container")
 
-    try:
-        ftp_server = client.containers.get("ftp_server")
-    except docker.errors.NotFound:
-        logging.error("The container ftp_server does not exist")
-    except docker.errors.APIError:
-        logging.error("The server returns an error while getting the ftp_server container")
+    for i in range(3):
+        try:
+            ftp_server = client.containers.get("ftp_server"+str(i))
+        except docker.errors.NotFound:
+            logging.error("The container ftp_server does not exist")
+        except docker.errors.APIError:
+            logging.error("The server returns an error while getting the ftp_server container")
+        try:
+            ftp_server.stop()
+        except docker.errors.APIError:
+            logging.error("The server returns an error while stopping the ftp_server container")
 
-    try:
-        ftp_server.stop()
-    except docker.errors.APIError:
-        logging.error("The server returns an error while stopping the ftp_server container")
+    for i in range(5):
+        try:
+            http_server = client.containers.get("http_server"+str(i))
+        except docker.errors.NotFound:
+            logging.error("The container http_server does not exist")
+        except docker.errors.APIError:
+            logging.error("The server returns an error while getting the http_server container")
 
-    try:
-        http_server = client.containers.get("http_server")
-    except docker.errors.NotFound:
-        logging.error("The container http_server does not exist")
-    except docker.errors.APIError:
-        logging.error("The server returns an error while getting the http_server container")
-
-    try:
-        http_server.stop()
-    except docker.errors.APIError:
-        logging.error("The server returns an error while stopping the http_server container")
+        try:
+            http_server.stop()
+        except docker.errors.APIError:
+            logging.error("The server returns an error while stopping the http_server container")
 
 
 def removeServersContainer():
