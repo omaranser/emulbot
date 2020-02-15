@@ -3,6 +3,8 @@ FROM alpine:3.11
 
 ENV PYTHONUNBUFFERED=1
 
+
+
 RUN echo "**** install  ****" && \
     apk add --no-cache bind-tools && \
     apk add --no-cache go && \
@@ -28,8 +30,8 @@ RUN make
 
 WORKDIR /
 
+
 #WORKDIR $GOPATH/src/github.com/Ne0nd0g/merlin
 
-CMD echo 'nameserver 193.168.0.1' > /etc/resolv.conf
 CMD tail -f /dev/null
 #CMD cd merlin-master/cmd/merlinagent && go run main.go
