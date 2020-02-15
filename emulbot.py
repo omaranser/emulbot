@@ -1,3 +1,4 @@
+import threading
 import docker
 from argparse import ArgumentParser
 import sys
@@ -51,9 +52,9 @@ def buildServersImages():
     try:
         client.images.build(path="servers/http", tag="http")
     except docker.errors.BuildError:
-       logging.error("Error during the build of the HTTP server")
+        logging.error("Error during the build of the HTTP server")
     except docker.errors.APIError:
-       logging.error("The server returns an error while building the HTTP server")
+        logging.error("The server returns an error while building the HTTP server")
     except TypeError:
         pass
 
@@ -69,7 +70,7 @@ def buildServersImages():
 
 def buildBotnetImages():
     try:
-        client.images.build(path="botnet/botmaster", tag="merlinserver")
+        client.images.build(path="botnet/botmaster", tag="tbotm")
     except docker.errors.BuildError:
         logging.error("Error during the build of the bot_master")
     except docker.errors.APIError:
@@ -77,7 +78,7 @@ def buildBotnetImages():
     except TypeError:
         pass
     try:
-        client.images.build(path="botnet/bots", tag="merlinagent")
+        client.images.build(path="botnet/bots", tag="tbot")
     except docker.errors.BuildError:
         logging.error("Error during the build of the bot")
     except docker.errors.APIError:
@@ -100,21 +101,21 @@ def buildEmulbot():
 
 def createServersContainer():
     try:
-        client.containers.create("dns", network="nw_internet")
+        client.containers.create(image="dns", network="nw_internet")
     except docker.errors.ImageNotFound:
         logging.error("The specified DNS image does not exist")
     except docker.errors.APIError:
         logging.error("The server returns an error while creating the DNS server")
 
     try:
-        client.containers.create("ftp", network="nw_internet")
+        client.containers.create(image="ftp", network="nw_internet")
     except docker.errors.ImageNotFound:
         logging.error("The specified FTP image does not exist")
     except docker.errors.APIError:
         logging.error("The server returns ans error while creating the FTP server")
 
     try:
-        client.containers.create("http", network="nw_internet")
+        client.containers.create(image="http", network="nw_internet")
     except docker.errors.ImageNotFound:
         logging.error("The specified HTTP image does not exist")
     except docker.errors.APIError:
@@ -123,7 +124,7 @@ def createServersContainer():
 
 def startServersContainer():
     try:
-        client.containers.run("dns", detach=True, network="nw_internet", name="dns_server")
+        client.containers.run(image="dns", detach=True, network="nw_internet", name="dns_server")
     except docker.errors.ContainerError:
         logging.error("The DNS container exits with a non-zero exit code and detach is False")
     except docker.errors.ImageNotFound:
@@ -132,7 +133,7 @@ def startServersContainer():
         logging.error("The server returns an error while running the DNS server")
 
     try:
-        client.containers.run("ftp", detach=True, network="nw_internet", name="ftp_server")
+        client.containers.run(image="ftp", detach=True, network="nw_internet", name="ftp_server")
     except docker.errors.ContainerError:
         logging.error("The FTP container exists with a non-zero exit code and detach is False")
     except docker.errors.ImageNotFound:
@@ -141,7 +142,7 @@ def startServersContainer():
         logging.error("The server returns an error while running the FTP server")
 
     try:
-        client.containers.run("http", detach=True, network="nw_internet", name="http_server")
+        client.containers.run(image="http", detach=True, network="nw_internet", name="http_server")
     except docker.errors.ContainerError:
         logging.error("The HTTP container exists with a non-zero exit code and detach is False")
     except docker.errors.ImageNotFound:
@@ -152,38 +153,45 @@ def startServersContainer():
 
 def createBotnetContainer():
     try:
-        client.containers.create("merlinserver", network="nw_internet")
+        client.containers.create(image="tbotm", network="nw_internet")
     except docker.errors.ImageNotFound:
-        logging.error("The specified merlinserver image does not exist")
+        logging.error("The specified tbotm image does not exist")
     except docker.errors.APIError:
-        logging.error("The server returns an error while creating the merlinserver container")
+        logging.error("The server returns an error while creating the tbotm container")
+    for i in range(0, NB):
+        try:
+            client.containers.create(image="tbot", network="nw_local")
+        except docker.errors.ImageNotFound:
+            logging.error("The specified tbot image does not exist")
+        except docker.errors.APIError:
+            logging.error("The server returns an error while creating the tbot container")
 
+
+def startBotnetContainers():
     try:
-        client.containers.create("merlinagent", network="nw_local")
-    except docker.errors.ImageNotFound:
-        logging.error("The specified merlinagent image does not exist")
-    except docker.errors.APIError:
-        logging.error("The server returns an error while creating the merlinagent container")
-
-
-def startBotnetContainer():
-    try:
-        client.containers.run("merlinserver", detach=True, network="nw_internet", name="bot_master")
+        client.containers.run("tbotm", detach=True, network="nw_internet", name="bot_master")
     except docker.errors.ContainerError:
-        logging.error("The merlinserver container exits with a non-zero exit code and detach is False")
+        logging.error("The tbotm container exits with a non-zero exit code and detach is False")
     except docker.errors.ImageNotFound:
-        logging.error("The specified merlinserver image does not exist")
+        logging.error("The specified tbotm image does not exist")
     except docker.errors.APIError:
-        logging.error("The server returns an error while running the merlinserver container")
+        logging.error("The server returns an error while running the tbot container")
 
+    for i in range(0, NB):
+        t = threading.Thread(target=startSingleBotContainer(i))
+        t.start()
+    t.join()
+
+
+def startSingleBotContainer(id_bot):
     try:
-        client.containers.run("merlinagent", detach=True, network="nw_local", name="bot")
+        client.containers.run("tbot", detach=True, network="nw_local", name="bot_" + str(id_bot))
     except docker.errors.ContainerError:
-        logging.error("The merlinagent container exits with a non-zero exit code and detach is False")
+        logging.error("The tbot container exits with a non-zero exit code and detach is False")
     except docker.errors.ImageNotFound:
-        logging.error("The specified merlinagent image does not exist")
+        logging.error("The specified tbot image does not exist")
     except docker.errors.APIError:
-        logging.error("The server returns an error while running the merlinagent container")
+        logging.error("The server returns an error while running the tbot container")
 
 
 def startEmulbot():
@@ -197,7 +205,7 @@ def startEmulbot():
     createBotnetContainer()
     logging.info("Botnet container created")
     logging.info("Starting botnet container")
-    startBotnetContainer()
+    startBotnetContainers()
     logging.info("Botnet container started")
 
 
@@ -258,17 +266,11 @@ def removeServersContainer():
         logging.error("The server returns an error at the prune function")
 
 
-def stopBotnetContainer():
-    try:
-        bot = client.containers.get("bot")
-    except docker.errors.NotFound:
-        logging.error("The container bot does not exist")
-    except docker.errors.APIError:
-        logging.error("The server returns an error while getting the bot container")
-    try:
-        bot.stop()
-    except docker.errors.APIError:
-        logging.error("The server returns an error while stopping the bot container")
+def stopBotnetContainers():
+    for i in range(0, NB):
+        t = threading.Thread(target=stopSingleBotContainer(i))
+        t.start()
+    t.join()
     try:
         bot_master = client.containers.get("bot_master")
     except docker.errors.NotFound:
@@ -279,6 +281,19 @@ def stopBotnetContainer():
         bot_master.stop()
     except docker.errors.APIError:
         logging.error("The server returns an error while stopping the bot_master container")
+
+
+def stopSingleBotContainer(id_bot):
+    try:
+        bot = client.containers.get("bot_"+str(id_bot))
+    except docker.errors.NotFound:
+        logging.error("The container bot does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while getting the bot container")
+    try:
+        bot.stop()
+    except docker.errors.APIError:
+        logging.error("The server returns an error while stopping the bot container")
 
 
 def removeBotnetContainer():
@@ -294,7 +309,7 @@ def cleanEmulbot():
     removeServersContainer()
     logging.info("Servers container cleaned")
     logging.info("Cleaning botnet container")
-    stopBotnetContainer()
+    stopBotnetContainers()
     removeBotnetContainer()
     logging.info("Botnet container cleaned")
     logging.info("Cleaning nw_local and nw_internet")
@@ -303,16 +318,18 @@ def cleanEmulbot():
 
 
 def main():
+    global NB
     parser = ArgumentParser()
     parser.add_argument('action', choices=['build', 'stop', 'clean', 'run'], type=str,
                         help="build | stop | clean | run")
-    parser.add_argument("--nb", default=50, help="Number of bot")
-    parser.add_argument("--nv", default=0, help="")
+    parser.add_argument("--nb", type=int, default=10, help="Number of bot to run and/or clean")
+    parser.add_argument("--nv", type=int, default=0, help="")
     parser.add_argument("--pktfreq", default=None)
     parser.add_argument("--pktsize", default=None)
     parser.add_argument("--duration", default=None)
 
     args = parser.parse_args()
+    NB = args.nb
 
     if args.action == "build":
         buildEmulbot()
