@@ -126,7 +126,7 @@ def startServersContainer():
 
     for i in range(3):
         try:
-            client.containers.run("ftp", detach=True, network="nw_internet", name="ftp_server"+str(i))
+            client.containers.run("ftp", detach=True, network="nw_internet", name="ftp_server_"+str(i))
         except docker.errors.ContainerError:
             logging.error("The FTP container exists with a non-zero exit code and detach is False")
         except docker.errors.ImageNotFound:
@@ -136,7 +136,7 @@ def startServersContainer():
 
     for i in range(5):
         try:
-            client.containers.run("http", detach=True, network="nw_internet", name="http_server"+str(i))
+            client.containers.run("http", detach=True, network="nw_internet", name="http_server_"+str(i))
         except docker.errors.ContainerError:
             logging.error("The HTTP container exists with a non-zero exit code and detach is False")
         except docker.errors.ImageNotFound:
@@ -161,13 +161,13 @@ def createBotnetContainer():
         logging.error("The specified tbotm image does not exist")
     except docker.errors.APIError:
         logging.error("The server returns an error while creating the tbotm container")
-    for i in range(0, NB):
-        try:
-            client.containers.create(image="tbot", network="nw_local")
-        except docker.errors.ImageNotFound:
-            logging.error("The specified tbot image does not exist")
-        except docker.errors.APIError:
-            logging.error("The server returns an error while creating the tbot container")
+
+    try:
+        client.containers.create(image="tbot", network="nw_local")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified tbot image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while creating the tbot container")
 
 
 def startBotnetContainers():
@@ -240,7 +240,7 @@ def stopServersContainer():
 
     for i in range(3):
         try:
-            ftp_server = client.containers.get("ftp_server"+str(i))
+            ftp_server = client.containers.get("ftp_server_"+str(i))
         except docker.errors.NotFound:
             logging.error("The container ftp_server does not exist")
         except docker.errors.APIError:
@@ -252,7 +252,7 @@ def stopServersContainer():
 
     for i in range(5):
         try:
-            http_server = client.containers.get("http_server"+str(i))
+            http_server = client.containers.get("http_server_"+str(i))
         except docker.errors.NotFound:
             logging.error("The container http_server does not exist")
         except docker.errors.APIError:
