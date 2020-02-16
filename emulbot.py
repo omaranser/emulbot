@@ -123,14 +123,6 @@ def createServersContainer():
 
 
 def startServersContainer():
-    try:
-        client.containers.run(image="dns", detach=True, network="nw_internet", name="dns_server")
-    except docker.errors.ContainerError:
-        logging.error("The DNS container exits with a non-zero exit code and detach is False")
-    except docker.errors.ImageNotFound:
-        logging.error("The specified DNS image does not exist")
-    except docker.errors.APIError:
-        logging.error("The server returns an error while running the DNS server")
 
     for i in range(3):
         try:
@@ -151,6 +143,15 @@ def startServersContainer():
             logging.error("The specified HTTP image does not exist")
         except docker.errors.APIError:
             logging.error("The server returns an error while running the HTTP server")
+
+    try:
+        client.containers.run(image="dns", detach=True, network="nw_internet", name="dns_server")
+    except docker.errors.ContainerError:
+        logging.error("The DNS container exits with a non-zero exit code and detach is False")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified DNS image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while running the DNS server")
 
 
 def createBotnetContainer():
