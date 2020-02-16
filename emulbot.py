@@ -2,15 +2,19 @@ import threading
 import docker
 from argparse import ArgumentParser
 import sys
-import time
 import coloredlogs, logging
-from console_progressbar import ProgressBar
 
 client = docker.DockerClient(base_url='unix://var/run/docker.sock')
 
 logger = logging.getLogger(__name__)
 logging.basicConfig()
 coloredlogs.install(level='INFO', logger=logger)
+
+
+def progresingBar(name, width):
+    sys.stdout.write(name+": [%s]" % (" " * width))
+    sys.stdout.flush()
+    sys.stdout.write("\b" * (width + 1))  # return to start of line, after '['
 
 
 def buildDockerNetworks():
@@ -124,25 +128,23 @@ def createServersContainer():
 
 def startServersContainer():
 
-    for i in range(3):
-        try:
-            client.containers.run("ftp", detach=True, network="nw_internet", name="ftp_server_"+str(i))
-        except docker.errors.ContainerError:
-            logging.error("The FTP container exists with a non-zero exit code and detach is False")
-        except docker.errors.ImageNotFound:
-            logging.error("The specified FTP image does not exist")
-        except docker.errors.APIError:
-            logging.error("The server returns an error while running the FTP server")
+    progresingBar("ftp server(s)", nftp)
+    for i in range(nftp):
+        t = threading.Thread(target=startSingleFtpContainer(i))
+        t.start()
+        sys.stdout.write("#")
+        sys.stdout.flush()
+    t.join()
+    sys.stdout.write("]\n")
 
-    for i in range(5):
-        try:
-            client.containers.run("http", detach=True, network="nw_internet", name="http_server_"+str(i))
-        except docker.errors.ContainerError:
-            logging.error("The HTTP container exists with a non-zero exit code and detach is False")
-        except docker.errors.ImageNotFound:
-            logging.error("The specified HTTP image does not exist")
-        except docker.errors.APIError:
-            logging.error("The server returns an error while running the HTTP server")
+    progresingBar("http server(s)", nhttp)
+    for i in range(nhttp):
+        t = threading.Thread(target=startSingleHttpContainer(i))
+        t.start()
+        sys.stdout.write("#")
+        sys.stdout.flush()
+    t.join()
+    sys.stdout.write("]\n")
 
     try:
         client.containers.run(image="dns", detach=True, network="nw_internet", name="dns_server")
@@ -152,6 +154,28 @@ def startServersContainer():
         logging.error("The specified DNS image does not exist")
     except docker.errors.APIError:
         logging.error("The server returns an error while running the DNS server")
+
+
+def startSingleHttpContainer(i):
+    try:
+        client.containers.run("http", detach=True, network="nw_internet", name="http_server_" + str(i))
+    except docker.errors.ContainerError:
+        logging.error("The HTTP container exists with a non-zero exit code and detach is False")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified HTTP image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while running the HTTP server")
+
+
+def startSingleFtpContainer(i):
+    try:
+        client.containers.run("ftp", detach=True, network="nw_internet", name="ftp_server_" + str(i))
+    except docker.errors.ContainerError:
+        logging.error("The FTP container exists with a non-zero exit code and detach is False")
+    except docker.errors.ImageNotFound:
+        logging.error("The specified FTP image does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while running the FTP server")
 
 
 def createBotnetContainer():
@@ -180,10 +204,13 @@ def startBotnetContainers():
     except docker.errors.APIError:
         logging.error("The server returns an error while running the tbot container")
 
-    for i in range(0, NB):
+    for i in range(0, toolbar_width):
         t = threading.Thread(target=startSingleBotContainer(i))
         t.start()
+        sys.stdout.write("#")
+        sys.stdout.flush()
     t.join()
+    sys.stdout.write("]\n")
 
 
 def startSingleBotContainer(id_bot):
@@ -197,7 +224,6 @@ def startSingleBotContainer(id_bot):
         logging.error("The server returns an error while running the tbot container")
 
 
-
 def startEmulbot():
     logging.info("Creating servers container")
     createServersContainer()
@@ -209,6 +235,7 @@ def startEmulbot():
     createBotnetContainer()
     logging.info("Botnet container created")
     logging.info("Starting botnet container")
+    progresingBar("bot(s)", toolbar_width)
     startBotnetContainers()
     logging.info("Botnet container started")
 
@@ -238,30 +265,52 @@ def stopServersContainer():
     except docker.errors.APIError:
         logging.error("The server returns an error while stopping the dns_server container")
 
-    for i in range(3):
-        try:
-            ftp_server = client.containers.get("ftp_server_"+str(i))
-        except docker.errors.NotFound:
-            logging.error("The container ftp_server does not exist")
-        except docker.errors.APIError:
-            logging.error("The server returns an error while getting the ftp_server container")
-        try:
-            ftp_server.stop()
-        except docker.errors.APIError:
-            logging.error("The server returns an error while stopping the ftp_server container")
+    progresingBar("ftp server(s)", nftp)
 
-    for i in range(5):
-        try:
-            http_server = client.containers.get("http_server_"+str(i))
-        except docker.errors.NotFound:
-            logging.error("The container http_server does not exist")
-        except docker.errors.APIError:
-            logging.error("The server returns an error while getting the http_server container")
+    for i in range(nftp):
+        t = threading.Thread(target=stopSingleFtpContainer(i))
+        t.start()
+        sys.stdout.write("#")
+        sys.stdout.flush()
+    t.join()
+    sys.stdout.write("]\n")
 
-        try:
-            http_server.stop()
-        except docker.errors.APIError:
-            logging.error("The server returns an error while stopping the http_server container")
+    progresingBar("http server(s)", nhttp)
+
+    for i in range(nhttp):
+        t = threading.Thread(target=stopSingleHttpContainer(i))
+        t.start()
+        sys.stdout.write("#")
+        sys.stdout.flush()
+    t.join()
+    sys.stdout.write("]\n")
+
+
+def stopSingleHttpContainer(i):
+    try:
+        http_server = client.containers.get("http_server_" + str(i))
+    except docker.errors.NotFound:
+        logging.error("The container http_server does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while getting the http_server container")
+
+    try:
+        http_server.stop()
+    except docker.errors.APIError:
+        logging.error("The server returns an error while stopping the http_server container")
+
+
+def stopSingleFtpContainer(i):
+    try:
+        ftp_server = client.containers.get("ftp_server_" + str(i))
+    except docker.errors.NotFound:
+        logging.error("The container ftp_server does not exist")
+    except docker.errors.APIError:
+        logging.error("The server returns an error while getting the ftp_server container")
+    try:
+        ftp_server.stop()
+    except docker.errors.APIError:
+        logging.error("The server returns an error while stopping the ftp_server container")
 
 
 def removeServersContainer():
@@ -272,10 +321,13 @@ def removeServersContainer():
 
 
 def stopBotnetContainers():
-    for i in range(0, NB):
+    for i in range(0, toolbar_width):
         t = threading.Thread(target=stopSingleBotContainer(i))
         t.start()
+        sys.stdout.write("#")
+        sys.stdout.flush()
     t.join()
+    sys.stdout.write("]\n")
     try:
         bot_master = client.containers.get("bot_master")
     except docker.errors.NotFound:
@@ -290,7 +342,7 @@ def stopBotnetContainers():
 
 def stopSingleBotContainer(id_bot):
     try:
-        bot = client.containers.get("bot_"+str(id_bot))
+        bot = client.containers.get("bot_" + str(id_bot))
     except docker.errors.NotFound:
         logging.error("The container bot does not exist")
     except docker.errors.APIError:
@@ -314,6 +366,7 @@ def cleanEmulbot():
     removeServersContainer()
     logging.info("Servers container cleaned")
     logging.info("Cleaning botnet container")
+    progresingBar("bot(s)", toolbar_width)
     stopBotnetContainers()
     removeBotnetContainer()
     logging.info("Botnet container cleaned")
@@ -324,17 +377,26 @@ def cleanEmulbot():
 
 def main():
     global NB
+    global toolbar_width
+    global nftp
+    global nhttp
+
     parser = ArgumentParser()
     parser.add_argument('action', choices=['build', 'stop', 'clean', 'run'], type=str,
                         help="build | stop | clean | run")
     parser.add_argument("--nb", type=int, default=10, help="Number of bot to run and/or clean")
     parser.add_argument("--nv", type=int, default=0, help="")
+    parser.add_argument("--nftp", type=int, default=3, help="")
+    parser.add_argument("--nhttp", type=int, default=5, help="")
     parser.add_argument("--pktfreq", default=None)
     parser.add_argument("--pktsize", default=None)
     parser.add_argument("--duration", default=None)
 
     args = parser.parse_args()
     NB = args.nb
+    toolbar_width = NB
+    nftp = args.nftp
+    nhttp = args.nhttp
 
     if args.action == "build":
         buildEmulbot()
