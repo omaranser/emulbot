@@ -3,7 +3,9 @@ import threading
 import schedule
 import time
 import re
-import random
+from numpy import ones
+from numpy import random
+from numpy.random import choice
 from argparse import ArgumentParser
 import coloredlogs, logging
 
@@ -34,7 +36,7 @@ def scheduler(queue,idMax):
 def execSingleRequest(queue,idMax):
 
     lines = open("dns.txt").read().splitlines()
-    dn = random.choice(lines)
+    dn = choice(lines,1,p=sorted(random.dirichlet(ones(100),size=1)[0],reverse=True))
     id = scheduler(queue, idMax - 1)
     cont = client.containers.get(id)
     cont.exec_run("dig " + str(dn) + " @193.168.0.9")
