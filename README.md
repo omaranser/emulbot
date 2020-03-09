@@ -1,2 +1,5 @@
 # emulbot
-botnet emulator 
+Emulateur de botnets 
+
+## prérequis: 
+Installer Docker sur votre machine 
