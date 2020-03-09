@@ -1,5 +1,8 @@
 # emulbot
 Emulateur de botnets 
 
-## prérequis: 
-Installer Docker sur votre machine 
+## Prérequis: 
+Installer Docker sur votre machine. 
+
+## Pour lancer emulbot: 
+* Suivre le diagramme d'activité fourni dans le rapport
